@@ -1,269 +1,425 @@
-# CATIA V5 MCP Server
+<p align="center">
+  <img <img width="1536" height="509" alt="ChatGPT Image Jul 2, 2026, 12_23_27 PM" src="https://github.com/user-attachments/assets/88db7778-fb7c-433c-8d8f-062fa53a7688" />
+</p>
 
-A production-grade [Model Context Protocol](https://modelcontextprotocol.io) server
-that lets **Claude Desktop** design real 3D geometry in **CATIA V5** through
-natural language, via [pyCATIA](https://github.com/evereux/pycatia) COM
-automation.
+<h1 align="center">🚀 CATIClaude</h1>
 
-> "Design a lightweight L-bracket with 120mm base, 10mm thickness, and 2
-> mounting holes" -> a real, exported `.CATPart` + STEP file.
+<p align="center">
 
-This is not a demo script. It is a layered engineering automation system with
-a session engine, a pyCATIA abstraction layer, a CAD intent planner, retrying
-execution, structured error handling, and a test suite.
+AI-Powered CATIA V5 Automation through the Model Context Protocol
 
----
+</p>
 
-## 1. Architecture
+<p align="center">
+
+</p>
+
+## ⭐ Badges
+
+<p align="center">
+
+<img src="https://img.shields.io/badge/Python-3.10+-blue">
+
+<img src="https://img.shields.io/badge/CATIA-V5-blue">
+
+<img src="https://img.shields.io/badge/MCP-Compatible-orange">
+
+<img src="https://img.shields.io/badge/Claude-Desktop-orange">
+
+<img src="https://img.shields.io/badge/Platform-Windows-lightgrey">
+
+<img src="https://img.shields.io/badge/License-MIT-green">
+
+</p>
+
+
+## 🧠 Overview
+
+CATIClaude is a production-grade Model Context Protocol (MCP) server that connects Claude Desktop directly to CATIA V5 through pyCATIA COM automation.
+
+It enables engineers to design real mechanical parts using natural language — and automatically generate:
+
+CATPart files
+STEP / IGES exports
+Fully parametric 3D geometry
+
+Example:
+
+“Design a lightweight L-bracket with 120mm base, 10mm thickness, and 2 mounting holes”
+
+➡️ CATIA automatically builds the full 3D model.
+
+## 🏛 Design Philosophy
+
+CATIClaude is designed around one central principle:
+
+> AI should describe engineering intent—not low-level CAD operations.
+
+Instead of exposing the complexity of the CATIA COM API to the user,
+CATIClaude translates natural language into deterministic CAD operations
+through a layered planning architecture.
+
+This keeps the interface simple while maintaining engineering reliability.
+
+## ⚙️ Key Idea
+
+Instead of manually modeling in CAD software:
+
+🧠 English → AI Planning → MCP Tools → CATIA V5 → Real Geometry
+
+## 🚀 Roadmap
+
+- [x] CATIA V5 integration
+- [x] MCP Server
+- [x] Natural-language CAD
+- [x] STEP export
+- [x] Parametric editing
+- [ ] Assembly generation
+- [ ] Drafting automation
+- [ ] Multi-agent engineering workflow
+- [ ] AI optimization tools
+- [ ] CATIA V6 support
+
+## 🏗️ System Architecture
 
 ```mermaid
 flowchart TD
-    A[Claude Desktop] -->|stdio / JSON-RPC| B[Layer 1: MCP Server Core]
-    B --> C[Layer 5: Tool Execution Engine]
-    C --> D[Layer 4: CAD Intent Planner]
-    C --> E[Layer 3: pyCATIA Abstraction]
-    D --> E
-    E --> F[Layer 2: CATIA Session Engine]
-    F --> G[CATIA V5 COM Application]
+    A[Claude Desktop] --> B[MCP Server Core]
+    B --> C[CAD Intent Planner]
+    C --> D[Execution Engine]
+    D --> E[pyCATIA Abstraction Layer]
+    E --> F[CATIA V5 COM API]
+    F --> G[3D Model + Export Files]
+
+    style A fill:#ff7a18,stroke:#333,color:#fff
+    style G fill:#1f77ff,stroke:#333,color:#fff
 ```
 
-| Layer | Location | Responsibility |
-|---|---|---|
-| 1. MCP Server Core | `server.py`, `core/` | FastMCP app, tool registry, routing, tracing, a global execution lock |
-| 2. CATIA Session Engine | `catia/session.py` | Singleton COM connection: start/attach, liveness probe, reconnect |
-| 3. pyCATIA Abstraction | `catia/*.py` | `PartManager`, `SketchManager`, `FeatureManager`, `ExportManager`, `ParameterManager`, `AnalysisManager` - the ONLY code that touches `pycatia` |
-| 4. CAD Intent Planner | `engine/intent_parser.py`, `engine/cad_planner.py`, `engine/validator.py` | NL -> structured plan, unit normalization, defaults with explicit assumptions, feasibility checks |
-| 5. Execution Engine | `engine/executor.py` | Step-by-step plan execution, per-step error capture, operation history |
+## 🧩 Architecture Layers
 
-### Execution pipeline
+| Layer | Component            | Responsibility                       |
+| ----- | -------------------- | ------------------------------------ |
+| 1     | MCP Server Core      | Tool routing + FastMCP interface     |
+| 2     | CATIA Session Engine | Stable COM session management        |
+| 3     | pyCATIA Abstraction  | Safe wrapper over CATIA API          |
+| 4     | CAD Intent Planner   | Natural language → structured design |
+| 5     | Execution Engine     | Step-by-step CAD construction        |
 
-```mermaid
-flowchart LR
-    U[User prompt in Claude] --> IP[Intent Parser]
-    IP --> CP[CAD Planner]
-    CP --> V[Validator]
-    V --> EX[Executor]
-    EX --> PW[pyCATIA Wrapper]
-    PW --> CATIA[CATIA V5 model update]
-    CATIA --> R[Result + optional export]
-```
+## 📁 Project Structure
 
-Claude can drive this pipeline two ways:
+    catia_mcp/
+    
+    ├── catia/
+    ├── core/
+    ├── engine/
+    ├── tools/
+    ├── utils/
+    ├── tests/
+    ├── config/
+    ├── server.py
+    ├── requirements.txt
+    └── README.md
 
-1. **Atomic tools** - Claude itself acts as the intent parser/planner and
-   calls `create_sketch`, `add_rectangle`, `pad`, ... one at a time. This is
-   the most flexible path and works for anything.
-2. **`design_from_text`** - a single high-level tool that runs a
-   deterministic, rule-based version of layer 4 for four common shapes
-   (bracket, plate, shaft, housing) end-to-end in one call.
 
-Both paths share the exact same manager singletons (`catia/managers.py`), so
-session state (active document/sketch/body) is always consistent.
+## 🧠 Core Features
 
-### Project structure
+🔹 Natural Language 
 
-```
-catia_mcp/
-├── server.py                 # MCP entry point (stdio transport)
-├── core/
-│   ├── mcp_router.py          # binds tool_registry -> FastMCP, tracing, global lock
-│   ├── tool_registry.py       # framework-agnostic tool collection
-│   └── state_manager.py       # singleton session/document/sketch/feature state
-├── catia/
-│   ├── session.py             # Layer 2: COM session, reconnect logic
-│   ├── pycatia_wrapper.py     # shared low-level pyCATIA helpers
-│   ├── managers.py            # shared manager singletons
-│   ├── part_manager.py
-│   ├── sketch_manager.py
-│   ├── feature_manager.py
-│   ├── export_manager.py
-│   ├── parameter_manager.py
-│   └── analysis_manager.py
-├── engine/
-│   ├── intent_parser.py       # NL -> DesignIntent
-│   ├── cad_planner.py         # DesignIntent -> ordered step list
-│   ├── validator.py           # geometry feasibility checks
-│   └── executor.py            # runs a plan step-by-step
-├── tools/
-│   ├── document_tools.py      # create_part, open/save/close_document
-│   ├── sketch_tools.py        # create_sketch, add_line/circle/rectangle, close_sketch
-│   ├── feature_tools.py       # pad, pocket, hole, fillet, chamfer
-│   ├── analysis_tools.py      # get_tree, get_edges, measure_distance, get_mass_properties, validate_geometry
-│   ├── export_tools.py        # export_step/iges/stl
-│   ├── parameter_tools.py     # set/get/list_parameter (bonus, parametric edits)
-│   └── design_tools.py        # design_from_text (high-level NL pipeline)
-├── utils/
-│   ├── logger.py               # rotating file logs (stdout reserved for MCP!)
-│   ├── error_handler.py        # exception hierarchy + retry decorator
-│   ├── units.py                 # mm normalization
-│   └── response.py              # {success, data, error, context} envelope
-├── tests/
-├── config/claude_desktop_config.json
-├── requirements.txt
-└── README.md
-```
+CAD Convert text → real CAD geometry
+Supports brackets, plates, shafts, housings
 
----
+🔹 Robust CATIA Session Engine
 
-## 2. Reliability design
+Singleton COM connection
+Auto-reconnect on crash
+Safe multi-call execution
 
-- **COM failure recovery**: `CatiaSession.is_alive()` probes `documents.count`
-  before every use; a dead session triggers a fresh `_connect()` transparently.
-- **Retry**: every mutating pyCATIA call is wrapped with
-  `utils.error_handler.retry(max_retries=2)` (3 total attempts), except
-  validation errors, which are never retried (retrying bad input is pointless).
-- **Sketch closure enforcement**: `SketchManager.is_closed()` checks that
-  circles/rectangles are self-closing or that a set of lines forms a closed
-  polygon (every vertex shared by exactly two segment endpoints).
-  `FeatureManager.pad/pocket` refuse to run against an open sketch.
-- **Structured errors**: `CatiaConnectionError`, `CatiaOperationError`,
-  `GeometryValidationError`, `PlanningError` all map to
-  `{"success": false, "error": "..."}` - Claude always gets a clear reason,
-  never a raw traceback.
-- **Single active session**: `CatiaSession` and every manager in
-  `catia/managers.py` are singletons; `core/mcp_router.py` serializes tool
-  calls with a global lock so the single COM session is never accessed
-  concurrently.
-- **Full audit trail**: every tool call is logged to
-  `logs/tool_trace.log`; CAD operations are logged to
-  `logs/catia_mcp.log`; `state.get_history()` exposes the in-memory
-  operation log for the current session.
+🔹 Sketch Intelligence
 
-### A note on `hole`/`fillet`/`chamfer` and CATIA versions
+Automatic sketch closure validation
+Prevents invalid Pad/Pocket operations
 
-CATIA V5's native `ShapeFactory.AddNewHole` COM signature has changed across
-releases (R19 through R2023x). To stay robust across versions, `hole()` is
-implemented as a circular sketch + pocket (mechanically equivalent, always
-available). `fillet()`/`chamfer()` use `AddNewEdgeFilletWithConstantRadius`
-and `AddNewChamfer`, which are more stable, but if your release's signature
-differs, the only file you need to touch is `catia/feature_manager.py` - no
-other layer depends on the exact COM call shape.
+🔹 Parametric Design Support
 
----
+Named parameters
+Real-time geometry updates
 
-## 3. Installation (Windows + CATIA V5)
+🔹 Export Pipeline
 
-**Prerequisites**
-- Windows 10/11
-- CATIA V5 (R20 or later recommended) installed and licensed
-- Python 3.10+ (a normal, non-Store install; must be able to load `pywin32`)
+STEP / IGES / STL export
+Automatic file generation
 
-**Steps**
 
-1. Copy the `catia_mcp/` folder anywhere on the machine that has CATIA V5,
-   e.g. `C:\tools\catia_mcp`.
-2. Install dependencies:
-   ```powershell
-   cd C:\tools\catia_mcp
-   python -m pip install -r requirements.txt
-   python -m pywin32_postinstall -install   # if pywin32 asks for this
-   ```
-3. Start CATIA V5 once manually the first time (license/activation dialogs
-   should be dismissed interactively before automating).
-4. Smoke-test the server directly:
-   ```powershell
-   python server.py --debug
-   ```
-   It should print nothing to stdout (MCP reserves stdout for protocol
-   traffic) and start logging to `logs/catia_mcp.log`. Press Ctrl+C to stop.
-5. Run the test suite (uses mocks, does not require CATIA to be running):
-   ```powershell
-   python -m pip install pytest pytest-mock
-   python -m pytest -q
-   ```
+## ✨ Features
 
-### Wiring into Claude Desktop
+- Natural-language CAD generation
+- Rule-based CAD planning engine
+- Stable CATIA COM session management
+- Automatic geometry validation
+- Parametric modeling support
+- STEP / STL / IGES export
+- Thread-safe MCP execution
+- Retry & recovery system
+- Structured JSON responses
+- Mock-based testing
+- Production-ready architecture
 
-Edit (or create) `%APPDATA%\Claude\claude_desktop_config.json` and merge in
-the contents of `config/claude_desktop_config.json`, updating the paths:
 
-```json
-{
-  "mcpServers": {
-    "catia": {
-      "command": "C:\\Path\\To\\Python\\python.exe",
-      "args": ["C:\\Path\\To\\catia_mcp\\server.py"],
-      "env": {}
-    }
-  }
-}
-```
+## 🔄 Execution Pipeline
 
-Restart Claude Desktop. A hammer/tools icon in the chat box should list the
-`catia` tools (`create_part`, `add_rectangle`, `pad`, `design_from_text`, ...).
+User Prompt
 
----
+   ↓
+   
+Intent Parser
 
-## 4. Example prompts
+   ↓
+   
+CAD Planner
 
-**Bracket** (uses the high-level planner):
-> Design a lightweight L-bracket with 120mm base, 10mm thickness, and 2
-> mounting holes.
+   ↓
+   
+Validator
 
-**Shaft**:
-> Create a 20mm diameter, 150mm long steel shaft.
+   ↓
+   
+Executor
 
-**Mechanical housing** (hollow box):
-> Design an enclosure 150mm long, 90mm wide, 60mm tall, with 3mm wall
-> thickness, and export it to STEP.
+   ↓
+pyCATIA Wrapper
 
-**Fully manual / atomic control** (for anything the presets don't cover):
-> Create a new part called "Gusset". Create a sketch on the XY plane, draw a
-> triangle with lines from (0,0) to (80,0), (80,0) to (0,60), and (0,60) to
-> (0,0), close the sketch, then pad it 6mm. Fillet all edges 2mm and export
-> to STEP at C:\parts\gusset.stp.
+   ↓
+   
+CATIA V5 Model
 
-**Dry run** (plan only, no CATIA calls):
-> Use design_from_text with execute=false to show me the plan for "a plate
-> 200mm x 100mm x 8mm with 4 mounting holes" before you run it.
+   ↓
+   
+Exported CAD Files
 
----
+## 🛠 Available MCP Tools
 
-## 5. Tool reference
+### Document
 
-| Category | Tools |
-|---|---|
-| Document | `create_part`, `open_document`, `save_document`, `close_document` |
-| Sketch | `create_sketch`, `add_line`, `add_circle`, `add_rectangle`, `close_sketch` |
-| Feature | `pad`, `pocket`, `hole`, `fillet`, `chamfer` |
-| Analysis | `get_tree`, `get_edges`, `measure_distance`, `get_mass_properties`, `validate_geometry` |
-| Export | `export_step`, `export_iges`, `export_stl` |
-| Parameters | `set_parameter`, `get_parameter`, `list_parameters` |
-| Natural language | `design_from_text` |
+- create_part
+- open_document
+- save_document
+- close_document
 
-Every tool returns:
+### Sketch
 
-```json
-{
-  "success": true,
-  "data": { "...": "..." },
-  "error": null,
-  "context": {
-    "active_document": "Part1.CATPart",
-    "active_part": "Part1",
-    "active_body": "PartBody",
-    "active_sketch": null,
-    "last_feature": "Pad.1",
-    "feature_count": 1
-  }
-}
-```
+- create_sketch
+- add_line
+- add_circle
+- add_rectangle
+- close_sketch
 
----
+### Features
 
-## 6. Testing
+- pad
+- pocket
+- hole
+- fillet
+- chamfer
 
-`tests/` uses `unittest.mock` to fake pyCATIA/COM objects, so the full suite
-runs on any OS without CATIA installed:
+### Parameters
 
-```powershell
-python -m pytest -q
-```
+- set_parameter
+- get_parameter
+- list_parameters
 
-Covers: sketch closure detection, pad/pocket/hole guard rails, session
-reconnect after a simulated COM crash, intent parsing, CAD plan generation,
-plan validation, and executor step dispatch/failure handling.
+### Analysis
 
-Integration testing against a real CATIA session (sketch creation, feature
-generation, STEP export) must be run manually on a licensed Windows/CATIA
-machine, since no CI environment here has a CATIA V5 license.
+- get_tree
+- get_edges
+- measure_distance
+- get_mass_properties
+- validate_geometry
+
+### Export
+
+- export_step
+- export_iges
+- export_stl
+
+### AI Design
+
+- design_from_text
+
+
+## 💡 Example Usage
+
+1. L-Bracket
+
+       Design a lightweight L-bracket with:
+       Base length: 120mm
+       Thickness: 10mm
+        2 mounting holes
+
+2. Shaft
+
+       Create a 20mm diameter, 150mm long steel shaft.
+
+3. Enclosure
+
+        Design a hollow box:
+        150 × 90 × 60 mm
+        Wall thickness: 3mm
+        Export STEP file
+
+## 🧪 Reliability Engineering
+
+   🔁 Automatic retry system (COM-safe)
+
+   🧯 Crash recovery for CATIA sessions
+  
+   🧩 Geometry validation before operations
+
+   🧠 Structured error system (no raw tracebacks)
+   
+   🔒 Global execution lock (thread-safe MCP)
+  
+   📜 Full audit logging for every CAD action
+
+
+## ⚠️ CATIA Compatibility Note
+
+Some CATIA V5 versions differ in COM APIs.
+
+To ensure stability:
+
+Hole feature is implemented via sketch + pocket fallback
+Fillet/Chamfer uses stable ShapeFactory calls
+Only feature_manager.py may require version-specific tweaks
+
+## 🧰 Installation
+
+Requirements 
+
+Windows 10,11 / 
+CATIA V5 (R20+ recommended) /
+Python 3.10+ /
+pywin32 / 
+pycatia 
+
+
+Setup
+
+        git clone https://github.com/YOUR_USERNAME/catia-claude-mcp
+        cd catia-claude-mcp
+
+        pip install -r requirements.txt
+        python -m pywin32_postinstall -install
+
+Run Server
+
+        python server.py
+
+Connect to Claude Desktop
+
+Edit:
+
+        %APPDATA%\Claude\claude_desktop_config.json
+
+JSON :  
+
+        {
+          "mcpServers": {
+            "catia": {
+              "command": "C:\\Python\\python.exe",
+              "args": ["C:\\path\\to\\catia_mcp\\server.py"]
+            }
+          }
+        }       
+
+
+## 📦 Output
+
+.CATPart
+
+.STEP
+
+.IGES
+
+.STL        
+
+## 🧪 Testing
+
+        pytest -q
+
+Mock-based tests (no CATIA required).        
+
+## 🌍 Why This Project Matters
+
+This project explores:
+
+AI × Mechanical Engineering automation
+
+Natural language CAD systems
+
+Multi-agent engineering workflows
+
+Future of design engineering interfaces        
+
+## 🤝 Contributing
+
+Contributions are welcome.
+
+If you would like to improve CATIClaude:
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Open a Pull Request
+
+## 📜 License
+
+This project is released under the MIT License.
+
+See the LICENSE file for details.
+
+## 🙏 Credits
+
+Built with:
+
+- Claude Desktop
+- Model Context Protocol (MCP)
+- pyCATIA
+- Python
+- CATIA V5 COM Automation
+
+Special thanks to the open-source communities behind these projects.
+
+## 📖 Citation
+
+If you use this project in your research or engineering workflow,
+please consider citing the repository and giving it a GitHub star.
+
+## 👤 Author
+
+**Pouya Bagheri**
+
+Mechanical Engineering Student
+
+Interests
+
+- AI for Engineering
+- CAD Automation
+- Mechanical Design
+- Digital Manufacturing
+- Model Context Protocol
+- Engineering Intelligence
+
+LinkedIn:
+ www.linkedin.com/in/pouyabagheri
+
+Gmail:
+ pouya.bagheri.2005@gmail.com
+
+ ---
+
+<p align="center">
+
+If this project helped you,
+consider giving it a ⭐ on GitHub.
+
+</p>
