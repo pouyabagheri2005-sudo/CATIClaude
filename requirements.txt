@@ -1,0 +1,10 @@
+# Core MCP SDK (FastMCP) - stdio transport, Claude Desktop compatible.
+mcp[cli]>=1.2.0
+
+# CATIA V5 COM automation.
+pycatia>=0.9.4
+pywin32>=306; platform_system == "Windows"
+
+# Testing.
+pytest>=8.0.0
+pytest-mock>=3.14.0

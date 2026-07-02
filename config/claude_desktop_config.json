@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "catia": {
+      "command": "C:\\Path\\To\\Python\\python.exe",
+      "args": [
+        "C:\\Path\\To\\catia_mcp\\server.py"
+      ],
+      "env": {}
+    }
+  }
+}
